@@ -1,3 +1,5 @@
+import sun.jvm.hotspot.debugger.cdbg.basic.BasicVoidType;
+
 // SUBMIT
 public class BTree implements BTreeInterface {
 
@@ -66,13 +68,118 @@ public class BTree implements BTreeInterface {
 
 	@Override
 	public Block search(int key) {
-		return root.search(key);
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
 	public void insert(Block b) {
-		// TODO Auto-generated method stub
-		
+		BNode constantRoot = root;
+		Block myBlock = new Block(1, new byte[10]);
+		BNode childrenNode = new BNode(t, myBlock);
+		int keyValue = b.getKey();
+
+		// for case that this is root
+		if(this.root == null){
+			BNode root = childrenNode; // I've put here numbers it not right
+																			  // just wanted it to work
+		}
+		// for all other cases
+		else {
+			BNode node = root;
+			while(!node.isEmpty()) {
+				if (node.getChildrenList().size() == 0) {
+					this.addKey(b, 0);
+					if (node.getChildrenList().size() <= t) {
+						break;
+					}
+
+					split(node);
+					break;
+				}
+
+				// when the new one is less or equals to the first
+				int lesser = node.getBlockKeyAt(0);
+				if(keyValue <= lesser) {
+					node = node.getChildAt(0);
+					continue;
+				}
+
+				// When the new one is greater of the last
+				int numberOfKeys = node.getNumOfBlocks();
+				int last = numberOfKeys-1;
+				int greater = node.getBlockKeyAt(last);
+				if(keyValue > greater){
+					node.getChildAt(numberOfKeys);
+					continue;
+				}
+
+				// when the new one is in the middle of the blocks
+				for(int i =0; i < node.getNumOfBlocks(); i++){
+					int prevKey = node.getBlockKeyAt(i-1);
+					int nextKey = node.getBlockKeyAt(i);
+					if(keyValue > prevKey && keyValue < nextKey){
+						node = node.getChildAt(i);
+						break;
+					}
+				}
+			}
+
+
+		}
+
+		// some line of code that needs to increase the size of the array by one
+		// size++
+
+		return;
+	}
+
+	private void addKey(Block toAdd, int index){
+		root.getBlocksList().add(index, toAdd);
+	}
+
+	private void split(BNode node){
+		BNode nodeToSplit = node;
+		int numberOfKeys = nodeToSplit.getNumOfBlocks();
+		int medianIndex = numberOfKeys/2;
+		int medianValue = node.getBlockKeyAt(medianIndex);
+
+		// split the left child
+		BNode left = new BNode(t, nodeToSplit.getBlockAt(0));
+		for(int i = 0; i < medianIndex; i++){
+			left.addKey(nodeToSplit.getBlockAt(i), i);
+		}
+
+		if(nodeToSplit.getChildrenList().size() > 0){
+			for(int j =0 ; j < medianIndex; j++){
+				BNode child = nodeToSplit.getChildAt(j);
+				left.getChildrenList().add(child);
+			}
+		}
+
+		// split the right child
+		BNode right = new BNode(t, nodeToSplit.getBlockAt(0)));
+		for(int i = medianIndex + 1; i < numberOfKeys; i++){
+			right.addKey(nodeToSplit.getBlockAt(i), i);
+		}
+
+		if(nodeToSplit.getChildrenList().size() > 0){
+			for(int j = medianIndex + 1 ; j < numberOfKeys; j++){
+				BNode child = nodeToSplit.getChildAt(j);
+				right.getChildrenList().add(child);
+			}
+		}
+
+		if(node == root){
+			BNode newRoot = new BNode(t, node);
+			newRoot.addKey(nodeToSplit.getBlockAt(medianIndex), medianIndex);
+			this.root = newRoot;
+			this.root.getChildrenList().add(left);
+			this.root.getChildrenList().add(right);
+		}
+//		else {
+//			BNode parent = node.get
+//		}
 	}
 
 	@Override
