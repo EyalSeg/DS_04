@@ -1,4 +1,3 @@
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 //SUBMIT
@@ -157,63 +156,22 @@ public class BNode implements BNodeInterface {
 	// ///////////////////DO NOT CHANGE END///////////////////
 	// ///////////////////DO NOT CHANGE END///////////////////
 	// ///////////////////DO NOT CHANGE END///////////////////
-	
+
+	public void addKey(Block toAdd, int index){
+		this.getBlocksList().add(index, toAdd);
+	}
 	
 	
 	@Override
 	public Block search(int key) {
-		for (int i = 0; i < blocksList.size(); i++)
-		{
-			Block currentBlock = getBlockAt(i);
-			if (currentBlock.getKey() == key)
-				return currentBlock;
-
-			if (currentBlock.getKey() < key)
-			{
-				if (getChildAt(i) == null)
-					return null;
-
-				return getChildAt(i).search(key);
-			}
-		}
-
-		return getChildAt(childrenList.size() - 1).search(key);
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
-	public void insertNonFull(Block itemToAdd) {
-			for (int i = 0; i < blocksList.size(); i++)
-			{
-				Block currentBlock = getBlockAt(i);
-				if (itemToAdd.getKey() < currentBlock.getKey())
-				{
-					if (isLeaf())
-					{
-						blocksList.add(i, itemToAdd);
-						numOfBlocks++;
-					}
-					else
-					{
-						BNode child = childrenList.get(i);
-						if (child == null)
-						{
-							child = new BNode(t, itemToAdd);
-							childrenList.add(i, child);
-							return;
-						}
-
-						if (child.isFull())
-						// TODO
-					}
-					return;
-				}
-			}
-
-			if (isLeaf())
-				blocksList.add(d);
-			else
-				// TODO
-
+	public void insertNonFull(Block d) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
@@ -227,35 +185,7 @@ public class BNode implements BNodeInterface {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	private void SplitChild(int index)
-	{
-		BNode child = getChildAt(index);
-		int childMedian = child.getNumOfBlocks() / 2;
-		ArrayList<Block> belowChild = new ArrayList<>(child.blocksList.subList(0, childMedian - 1));
-		ArrayList<BNode> belowChildChildren = new ArrayList<>(child.childrenList.subList(0, childMedian));
-
-		ArrayList<Block> aboveChild = new ArrayList<>(child.blocksList.subList(childMedian + 1, child.getNumOfBlocks() - 1));
-		ArrayList<BNode> aboveChildChildren = new ArrayList<>(child.childrenList.subList(childMedian + 1, child.getNumOfBlocks()));
-
-		BNode leftNode = new BNode(t, child.isLeaf(), belowChild.size());
-		leftNode.blocksList = belowChild;
-		leftNode.childrenList = belowChildChildren;
-
-		BNode rightNode = new BNode(t, child.isLeaf(), aboveChild.size());
-		rightNode.blocksList = aboveChild;
-		rightNode.childrenList = aboveChildChildren;
-
-		blocksList.add(index, child.getBlockAt(childMedian));
-		childrenList.remove(index);
-		childrenList.add(index, leftNode);
-		childrenList.remove(index + 1);
-		childrenList.add(index + 1, leftNode);
-
-	}
-
+	
 	
 
 }
-
-

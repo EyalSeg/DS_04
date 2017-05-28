@@ -139,47 +139,7 @@ public class BTree implements BTreeInterface {
 	}
 
 	private void split(BNode node){
-		BNode nodeToSplit = node;
-		int numberOfKeys = nodeToSplit.getNumOfBlocks();
-		int medianIndex = numberOfKeys/2;
-		int medianValue = node.getBlockKeyAt(medianIndex);
 
-		// split the left child
-		BNode left = new BNode(t, nodeToSplit.getBlockAt(0));
-		for(int i = 0; i < medianIndex; i++){
-			left.addKey(nodeToSplit.getBlockAt(i), i);
-		}
-
-		if(nodeToSplit.getChildrenList().size() > 0){
-			for(int j =0 ; j < medianIndex; j++){
-				BNode child = nodeToSplit.getChildAt(j);
-				left.getChildrenList().add(child);
-			}
-		}
-
-		// split the right child
-		BNode right = new BNode(t, nodeToSplit.getBlockAt(0)));
-		for(int i = medianIndex + 1; i < numberOfKeys; i++){
-			right.addKey(nodeToSplit.getBlockAt(i), i);
-		}
-
-		if(nodeToSplit.getChildrenList().size() > 0){
-			for(int j = medianIndex + 1 ; j < numberOfKeys; j++){
-				BNode child = nodeToSplit.getChildAt(j);
-				right.getChildrenList().add(child);
-			}
-		}
-
-		if(node == root){
-			BNode newRoot = new BNode(t, node);
-			newRoot.addKey(nodeToSplit.getBlockAt(medianIndex), medianIndex);
-			this.root = newRoot;
-			this.root.getChildrenList().add(left);
-			this.root.getChildrenList().add(right);
-		}
-//		else {
-//			BNode parent = node.get
-//		}
 	}
 
 	@Override
