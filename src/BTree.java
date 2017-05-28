@@ -68,125 +68,120 @@ public class BTree implements BTreeInterface {
 
 	@Override
 	public Block search(int key) {
-		// TODO Auto-generated method stub
-		return null;
+		int i = 1;
+
+		BNode searchForNode = this.root;
+		while (i < root.getNumOfBlocks() && key > searchForNode.getBlockKeyAt(i))
+			i = i + 1;
+		if(i <= root.getNumOfBlocks() && key == searchForNode.getBlockKeyAt(i))
+			return searchForNode.getBlockAt(i);
+		else if (searchForNode.isLeaf())
+			return null;
+
+		return root.getChildAt(i).search(key);
 	}
 
+	// this is the main structure of this, but not good yet
 	@Override
 	public void insert(Block b) {
-		BNode constantRoot = root;
-		Block myBlock = new Block(1, new byte[10]);
-		BNode childrenNode = new BNode(t, myBlock);
-		int keyValue = b.getKey();
-
-		// for case that this is root
-		if(this.root == null){
-			BNode root = childrenNode; // I've put here numbers it not right
-																			  // just wanted it to work
+		BNode r = this.root;
+		if(r.getT() == 2*t - 1){
+			BNode s = new BNode(t, false, 0); // the 0 here is probably a mistake
+			this.root = s;
+			s.getChildrenList().add(r);
+			splitChild(s,1);
+			insertNonFull(s, b);
 		}
-		// for all other cases
-		else {
-			BNode node = root;
-			while(!node.isEmpty()) {
-				if (node.getChildrenList().size() == 0) {
-					this.addKey(b, 0);
-					if (node.getChildrenList().size() <= t) {
-						break;
-					}
-
-					split(node);
-					break;
-				}
-
-				// when the new one is less or equals to the first
-				int lesser = node.getBlockKeyAt(0);
-				if(keyValue <= lesser) {
-					node = node.getChildAt(0);
-					continue;
-				}
-
-				// When the new one is greater of the last
-				int numberOfKeys = node.getNumOfBlocks();
-				int last = numberOfKeys-1;
-				int greater = node.getBlockKeyAt(last);
-				if(keyValue > greater){
-					node.getChildAt(numberOfKeys);
-					continue;
-				}
-
-				// when the new one is in the middle of the blocks
-				for(int i =0; i < node.getNumOfBlocks(); i++){
-					int prevKey = node.getBlockKeyAt(i-1);
-					int nextKey = node.getBlockKeyAt(i);
-					if(keyValue > prevKey && keyValue < nextKey){
-						node = node.getChildAt(i);
-						break;
-					}
-				}
-			}
-
-
-		}
-
-		// some line of code that needs to increase the size of the array by one
-		// size++
-
-		return;
+		else
+			insertNonFull(r,b);
 	}
 
 	private void addKey(Block toAdd, int index){
+
 		root.getBlocksList().add(index, toAdd);
 	}
 
-	private void split(BNode node){
-		BNode nodeToSplit = node;
-		int numberOfKeys = nodeToSplit.getNumOfBlocks();
-		int medianIndex = numberOfKeys/2;
-		int medianValue = node.getBlockKeyAt(medianIndex);
+	private void splitChild(BNode node, int i){
+		BNode childAti = node.getChildAt(i);
+		BNode parentOfNode = new BNode(t,childAti.isLeaf(), 0); // not sure that this is good - like above
+		for(int j = 1; j < t - 1; j++)
+			// untill t-1, that is the middle of a node that have 2t-1 blocks, which is a node that we
+			// are on because we got into splitChild function
+			parentOfNode.addKey(childAti.getBlockAt(j+t),j);
 
-		// split the left child
-		BNode left = new BNode(t, nodeToSplit.getBlockAt(0));
-		for(int i = 0; i < medianIndex; i++){
-			left.addKey(nodeToSplit.getBlockAt(i), i);
-		}
-
-		if(nodeToSplit.getChildrenList().size() > 0){
-			for(int j =0 ; j < medianIndex; j++){
-				BNode child = nodeToSplit.getChildAt(j);
-				left.getChildrenList().add(child);
+		if(!childAti.isLeaf()){
+			for(int j = 1; j < t; j++){
+				parentOfNode.getChildrenList().add(j, childAti.getChildAt(j+t));
 			}
 		}
 
-		// split the right child
-		BNode right = new BNode(t, nodeToSplit.getBlockAt(0)));
-		for(int i = medianIndex + 1; i < numberOfKeys; i++){
-			right.addKey(nodeToSplit.getBlockAt(i), i);
+		for(int j = node.getNumOfBlocks()+1; j < i + 1; i--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+		node.getChildrenList().add(i, parentOfNode);
+
+		for(int j = node.getNumOfBlocks(); j < i; j--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+
+		// Probably not workin but as a slekelton for fixing it later
+		node.addKey(childAti.getBlockAt(t), i);
+
+
+	}
+
+	private void switchPlaces(BNode node, Block block1, Block block2){
+		if(node.getBlocksList().contains(block2)){
+			int indexOf2 = node.getBlocksList().indexOf(block2);
+			node.addKey(block2, node.getBlocksList().indexOf(block1));
+			node.addKey(block1, indexOf2);
+		}
+		else {
+			int lastIndex = node.getNumOfBlocks();
+			node.addKey(block1, lastIndex);
 		}
 
-		if(nodeToSplit.getChildrenList().size() > 0){
-			for(int j = medianIndex + 1 ; j < numberOfKeys; j++){
-				BNode child = nodeToSplit.getChildAt(j);
-				right.getChildrenList().add(child);
+	}
+
+	private void insertNonFull(BNode node, Block k){
+		int i = node.getNumOfBlocks();
+		if(node.isLeaf()){
+			while (i >= 1 && k.getKey() < node.getBlockKeyAt(i)){
+				switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+				i = i - 1;
 			}
+			switchPlaces(node, node.getBlockAt(i+1), k);
 		}
+		else {
+			while(i >= 1 && k.getKey() < node.getBlockKeyAt(i))
+				i = i - 1;
 
-		if(node == root){
-			BNode newRoot = new BNode(t, node);
-			newRoot.addKey(nodeToSplit.getBlockAt(medianIndex), medianIndex);
-			this.root = newRoot;
-			this.root.getChildrenList().add(left);
-			this.root.getChildrenList().add(right);
+			i = i + 1;
+
+			if (node.getNumOfBlocks() == 2*t - 1){
+				splitChild(node, i);
+				if(k.getKey() > node.getBlockKeyAt(i))
+					i = i + 1;
+			}
+
+			insertNonFull(node.getChildAt(i), k);
 		}
-//		else {
-//			BNode parent = node.get
-//		}
+		return;
 	}
 
 	@Override
 	public void delete(int key) {
-		// TODO Auto-generated method stub
+		// first case - delete from current node - a leaf
+		Block blockToDelete = search(key);
+		BNode fromNodeToDelete = this.root;
+
 		
 	}
+
+//	public boolean remove(Block blockToRemove){
+//		if(blockToRemove == null)
+//			return false;
+//
+//		int indexOf = this.
+//	}
 
 	@Override
 	public MerkleBNode createMBT() {
