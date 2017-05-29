@@ -171,10 +171,72 @@ public class BNode implements BNodeInterface {
 		return null;
 	}
 
+	// wherever this appears here, it means the node to be inserted to
 	@Override
-	public void insertNonFull(Block d) {
-		// TODO Auto-generated method stub
-		
+	public void insertNonFull(Block k){
+		int i = this.getNumOfBlocks();
+		if(this.isLeaf()){
+			while (i >= 1 && k.getKey() < this.getBlockKeyAt(i)){
+				switchPlaces(this, this.getBlockAt(i+1), this.getBlockAt(i));
+				i = i - 1;
+			}
+			switchPlaces(this, this.getBlockAt(i+1), k);
+		}
+		else {
+			while(i >= 1 && k.getKey() < this.getBlockKeyAt(i))
+				i = i - 1;
+
+			i = i + 1;
+
+			if (this.getNumOfBlocks() == 2*t - 1){
+				splitChild(this, i);
+				if(k.getKey() > this.getBlockKeyAt(i))
+					i = i + 1;
+			}
+
+			this.getChildAt(i).insertNonFull(k);
+		}
+		return;
+	}
+
+	private void splitChild(BNode node, int i){
+		BNode childAti = node.getChildAt(i);
+		BNode parentOfNode = new BNode(t,childAti.isLeaf(), 0); // not sure that this is good - like above
+		for(int j = 1; j < t - 1; j++)
+			// untill t-1, that is the middle of a node that have 2t-1 blocks, which is a node that we
+			// are on because we got into splitChild function
+			parentOfNode.addKey(childAti.getBlockAt(j+t),j);
+
+		if(!childAti.isLeaf()){
+			for(int j = 1; j < t; j++){
+				parentOfNode.getChildrenList().add(j, childAti.getChildAt(j+t));
+			}
+		}
+
+		for(int j = node.getNumOfBlocks()+1; j < i + 1; i--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+		node.getChildrenList().add(i, parentOfNode);
+
+		for(int j = node.getNumOfBlocks(); j < i; j--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+
+		// Probably not workin but as a slekelton for fixing it later
+		node.addKey(childAti.getBlockAt(t), i);
+
+
+	}
+
+	private void switchPlaces(BNode node, Block block1, Block block2){
+		if(node.getBlocksList().contains(block2)){
+			int indexOf2 = node.getBlocksList().indexOf(block2);
+			node.addKey(block2, node.getBlocksList().indexOf(block1));
+			node.addKey(block1, indexOf2);
+		}
+		else {
+			int lastIndex = node.getNumOfBlocks();
+			node.addKey(block1, lastIndex);
+		}
+
 	}
 
 	@Override
@@ -226,6 +288,15 @@ public class BNode implements BNodeInterface {
 	}
 
 	private void shiftFromRightSibiling(int childIndex){
+		BNode parent = this;
+		Block rightBlockparent = parent.getBlockAt(0);
+		BNode childToMoveTo = parent.getChildAt(childIndex);
+		BNode childToTheRight = parent.getChildAt(childIndex + 1);
+
+		Block blockToMoveFromRight = childToTheRight.getBlockAt(0);
+		childToTheRight.getBlocksList().remove(0);
+
+		childToMoveTo.getBlocksList().add(childToMoveTo.getNumOfBlocks(), blockToMoveFromRight);
 
 	}
 

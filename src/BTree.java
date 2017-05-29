@@ -85,12 +85,15 @@ public class BTree implements BTreeInterface {
 	@Override
 	public void insert(Block b) {
 		BNode r = this.root;
-		if(r.getT() == 2*t - 1){
+		if(this.root != null && r.getT() == 2*t - 1){
 			BNode s = new BNode(t, false, 0); // the 0 here is probably a mistake
 			this.root = s;
 			s.getChildrenList().add(r);
 			splitChild(s,1);
 			insertNonFull(s, b);
+		}
+		else if(this.root == null){
+			this.root = new BNode(t,b);
 		}
 		else
 			insertNonFull(r,b);
@@ -143,12 +146,14 @@ public class BTree implements BTreeInterface {
 
 	private void insertNonFull(BNode node, Block k){
 		int i = node.getNumOfBlocks();
+		Block myBlock = new Block(k.getKey(),new byte[10]); // the 10 is probably not true
 		if(node.isLeaf()){
-			while (i >= 1 && k.getKey() < node.getBlockKeyAt(i)){
-				switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+			while (i >= 1 && k.getKey() < node.getBlockKeyAt(i-1)){
+				switchPlaces(node, node.getBlockAt(i), node.getBlockAt(i));
 				i = i - 1;
 			}
-			switchPlaces(node, node.getBlockAt(i+1), k);
+			node.getBlocksList().add(i, myBlock);
+//			switchPlaces(node, node.getBlockAt(i+1), k);
 		}
 		else {
 			while(i >= 1 && k.getKey() < node.getBlockKeyAt(i))
