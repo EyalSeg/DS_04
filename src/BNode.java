@@ -1,5 +1,7 @@
-import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 
 //SUBMIT
 public class BNode implements BNodeInterface {
@@ -157,69 +159,217 @@ public class BNode implements BNodeInterface {
 	// ///////////////////DO NOT CHANGE END///////////////////
 	// ///////////////////DO NOT CHANGE END///////////////////
 	// ///////////////////DO NOT CHANGE END///////////////////
-	
+
+	public void addKey(Block toAdd, int index){
+		this.getBlocksList().add(index, toAdd);
+	}
 	
 	
 	@Override
 	public Block search(int key) {
-		for (int i = 0; i < blocksList.size(); i++)
-		{
-			Block currentBlock = getBlockAt(i);
-			if (currentBlock.getKey() == key)
-				return currentBlock;
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-			if (currentBlock.getKey() < key)
-			{
-				if (getChildAt(i) == null)
-					return null;
+	// wherever this appears here, it means the node to be inserted to
+	@Override
+	public void insertNonFull(Block k){
+		int i = this.getNumOfBlocks();
+		if(this.isLeaf()){
+			while (i >= 1 && k.getKey() < this.getBlockKeyAt(i)){
+				switchPlaces(this, this.getBlockAt(i+1), this.getBlockAt(i));
+				i = i - 1;
+			}
+			switchPlaces(this, this.getBlockAt(i+1), k);
+		}
+		else {
+			while(i >= 1 && k.getKey() < this.getBlockKeyAt(i))
+				i = i - 1;
 
-				return getChildAt(i).search(key);
+			i = i + 1;
+
+			if (this.getNumOfBlocks() == 2*t - 1){
+				splitChild(this, i);
+				if(k.getKey() > this.getBlockKeyAt(i))
+					i = i + 1;
+			}
+
+			this.getChildAt(i).insertNonFull(k);
+		}
+		return;
+	}
+
+	private void splitChild(BNode node, int i){
+		BNode childAti = node.getChildAt(i);
+		BNode parentOfNode = new BNode(t,childAti.isLeaf(), 0); // not sure that this is good - like above
+		for(int j = 1; j < t - 1; j++)
+			// untill t-1, that is the middle of a node that have 2t-1 blocks, which is a node that we
+			// are on because we got into splitChild function
+			parentOfNode.addKey(childAti.getBlockAt(j+t),j);
+
+		if(!childAti.isLeaf()){
+			for(int j = 1; j < t; j++){
+				parentOfNode.getChildrenList().add(j, childAti.getChildAt(j+t));
 			}
 		}
 
-		return getChildAt(childrenList.size() - 1).search(key);
+		for(int j = node.getNumOfBlocks()+1; j < i + 1; i--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+		node.getChildrenList().add(i, parentOfNode);
+
+		for(int j = node.getNumOfBlocks(); j < i; j--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+
+		// Probably not workin but as a slekelton for fixing it later
+		node.addKey(childAti.getBlockAt(t), i);
+
+
 	}
 
-	@Override
-	public void insertNonFull(Block itemToAdd) {
-			for (int i = 0; i < blocksList.size(); i++)
-			{
-				Block currentBlock = getBlockAt(i);
-				if (itemToAdd.getKey() < currentBlock.getKey())
-				{
-					if (isLeaf())
-					{
-						blocksList.add(i, itemToAdd);
-						numOfBlocks++;
-					}
-					else
-					{
-						BNode child = childrenList.get(i);
-						if (child == null)
-						{
-							child = new BNode(t, itemToAdd);
-							childrenList.add(i, child);
-							return;
-						}
-
-						if (child.isFull())
-						// TODO
-					}
-					return;
-				}
-			}
-
-			if (isLeaf())
-				blocksList.add(d);
-			else
-				// TODO
+	private void switchPlaces(BNode node, Block block1, Block block2){
+		if(node.getBlocksList().contains(block2)){
+			int indexOf2 = node.getBlocksList().indexOf(block2);
+			node.addKey(block2, node.getBlocksList().indexOf(block1));
+			node.addKey(block1, indexOf2);
+		}
+		else {
+			int lastIndex = node.getNumOfBlocks();
+			node.addKey(block1, lastIndex);
+		}
 
 	}
 
 	@Override
 	public void delete(int key) {
-		// TODO Auto-generated method stub
-		
+		// if the deleted value is in the current node which is a leaf
+		if(this.isLeaf())
+			this.getBlocksList().remove(key);
+
+
+		if(!this.isLeaf() && this.getBlocksList().size() >= t){
+			if(this.getBlocksList().size() >= t){
+				int i = 0;
+				Block blockToSwitch = this.getChildrenList().get(this.childrenList.size()).findSuccessor(key);
+				while(i < this.getNumOfBlocks() && this.getBlockKeyAt(i) < key)
+					i = i + 1;
+				shift(this, this.getBlockAt(i), blockToSwitch); // shift with null means - needs to be deleted
+			}
+
+//			if(this.getBlocksList() < t)
+		}
+	}
+
+	private void mergeChildWithSibling(int childIndex){
+		BNode childNode = this.getChildAt(childIndex);
+		if(this.getChildrenList().get(childIndex + 1) != null){
+			BNode rightSibling = this.getChildAt(childIndex + 1);
+			merge(childNode, rightSibling);
+		}
+		else {
+			BNode leftSibling = this.getChildAt(childIndex - 1);
+			merge(childNode, leftSibling);
+		}
+
+	}
+
+	// need to be checked I think that this is ok
+	private void shiftFromLeftSibling(int childIndex){
+		BNode parent = this;
+		Block rightBlockParent = parent.getBlockAt(this.getNumOfBlocks());
+		parent.delete(rightBlockParent.getKey());
+
+		BNode childToShiftTo = this.getChildAt(childIndex);
+		childToShiftTo.addKey(rightBlockParent, 0);
+
+		BNode LeftChildToShiftFrom = this.getChildAt(childIndex-1);
+		Block blockToTakeFromLeft = LeftChildToShiftFrom.getBlockAt(LeftChildToShiftFrom.getNumOfBlocks());
+
+		LeftChildToShiftFrom.delete(blockToTakeFromLeft.getKey());
+	}
+
+	private void shiftFromRightSibiling(int childIndex){
+		BNode parent = this;
+		Block rightBlockparent = parent.getBlockAt(0);
+		BNode childToMoveTo = parent.getChildAt(childIndex);
+		BNode childToTheRight = parent.getChildAt(childIndex + 1);
+
+		Block blockToMoveFromRight = childToTheRight.getBlockAt(0);
+		childToTheRight.getBlocksList().remove(0);
+
+		childToMoveTo.getBlocksList().add(childToMoveTo.getNumOfBlocks(), blockToMoveFromRight);
+
+	}
+
+
+
+	private int getBlockIndex(Block b1){
+		int i;
+		for(i = 0; i < this.getNumOfBlocks(); i++)
+			i = i + 1;
+		return i;
+	}
+
+	// This function suppose to start with the right child of the block that I try to find
+	// successor for a key in it
+	private Block findSuccessor(int key){
+		if(this.isLeaf()){
+			return this.getBlocksList().get(0);
+		}
+		else{ //for now it's only else, it was else if
+			 return this.getChildrenList().get(0).findSuccessor(key);
+		}
+	}
+
+	private void merge(BNode node1, BNode node2){
+		// put 2 arrays of 2 nodes in one array, sort it, and put them together
+		BNode mergedNode = new BNode(t, node1.getNumOfBlocks()+node2.getNumOfBlocks(), node1.isLeaf(),
+									 node1.getBlocksList(), node1.getChildrenList());
+		int node1BlockNum = node1.getNumOfBlocks();
+		for(int i = 1; i < node2.getNumOfBlocks(); i++){
+			mergedNode.addKey(node2.getBlockAt(i), node1BlockNum+i);
+		}
+
+		node1 = mergedNode;
+		node2 = null;
+	}
+
+	private void shift(BNode node, Block block1, Block block2){
+
+		// The element block2 is being deleted. First I delete the block to be removed
+		// Then I put the content of block1 into the place of block2
+
+		// The condition that the block that I need to switch with is one index before
+		if(block2 == (this.getBlockAt(getBlockIndex(block1) - 1))){
+			Block tempBlock = block1;
+			this.getBlocksList().remove(getBlockIndex(block1));
+			this.getBlocksList().set(getBlockIndex(block2), tempBlock);
+		}
+
+		// This is for inserting block - block2 instead of some other block - block1
+		else if(!this.getBlocksList().contains(block2)){
+			this.getBlocksList().set(getBlockIndex(block1), block2);
+		}
+
+		// regular switch - block1 instead of block2 and block2 instead of block1
+		else if(node.getBlocksList().contains(block2)){
+			int indexOf2 = node.getBlocksList().indexOf(block2);
+			node.addKey(block2, node.getBlocksList().indexOf(block1));
+			node.addKey(block1, indexOf2);
+		}
+
+		// Inserting last element
+		else {
+			int lastIndex = node.getNumOfBlocks();
+			node.addKey(block1, lastIndex);
+		}
+
+	}
+
+	public class blockComparator implements Comparator<Block>{
+
+		public int compare(Block block1, Block block2){
+			  return block1.getKey()-block2.getKey();
+		}
 	}
 
 	@Override
@@ -227,35 +377,7 @@ public class BNode implements BNodeInterface {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	private void SplitChild(int index)
-	{
-		BNode child = getChildAt(index);
-		int childMedian = child.getNumOfBlocks() / 2;
-		ArrayList<Block> belowChild = new ArrayList<>(child.blocksList.subList(0, childMedian - 1));
-		ArrayList<BNode> belowChildChildren = new ArrayList<>(child.childrenList.subList(0, childMedian));
-
-		ArrayList<Block> aboveChild = new ArrayList<>(child.blocksList.subList(childMedian + 1, child.getNumOfBlocks() - 1));
-		ArrayList<BNode> aboveChildChildren = new ArrayList<>(child.childrenList.subList(childMedian + 1, child.getNumOfBlocks()));
-
-		BNode leftNode = new BNode(t, child.isLeaf(), belowChild.size());
-		leftNode.blocksList = belowChild;
-		leftNode.childrenList = belowChildChildren;
-
-		BNode rightNode = new BNode(t, child.isLeaf(), aboveChild.size());
-		rightNode.blocksList = aboveChild;
-		rightNode.childrenList = aboveChildChildren;
-
-		blocksList.add(index, child.getBlockAt(childMedian));
-		childrenList.remove(index);
-		childrenList.add(index, leftNode);
-		childrenList.remove(index + 1);
-		childrenList.add(index + 1, leftNode);
-
-	}
-
+	
 	
 
 }
-
-

@@ -1,3 +1,5 @@
+import sun.jvm.hotspot.debugger.cdbg.basic.BasicVoidType;
+
 // SUBMIT
 public class BTree implements BTreeInterface {
 
@@ -66,20 +68,125 @@ public class BTree implements BTreeInterface {
 
 	@Override
 	public Block search(int key) {
-		return root.search(key);
+		int i = 1;
+
+		BNode searchForNode = this.root;
+		while (i < root.getNumOfBlocks() && key > searchForNode.getBlockKeyAt(i))
+			i = i + 1;
+		if(i <= root.getNumOfBlocks() && key == searchForNode.getBlockKeyAt(i))
+			return searchForNode.getBlockAt(i);
+		else if (searchForNode.isLeaf())
+			return null;
+
+		return root.getChildAt(i).search(key);
 	}
 
+	// this is the main structure of this, but not good yet
 	@Override
 	public void insert(Block b) {
-		// TODO Auto-generated method stub
-		
+		BNode r = this.root;
+		if(this.root != null && r.getT() == 2*t - 1){
+			BNode s = new BNode(t, false, 0); // the 0 here is probably a mistake
+			this.root = s;
+			s.getChildrenList().add(r);
+			splitChild(s,1);
+			insertNonFull(s, b);
+		}
+		else if(this.root == null){
+			this.root = new BNode(t,b);
+		}
+		else
+			insertNonFull(r,b);
+	}
+
+	private void addKey(Block toAdd, int index){
+
+		root.getBlocksList().add(index, toAdd);
+	}
+
+	private void splitChild(BNode node, int i){
+		BNode childAti = node.getChildAt(i);
+		BNode parentOfNode = new BNode(t,childAti.isLeaf(), 0); // not sure that this is good - like above
+		for(int j = 1; j < t - 1; j++)
+			// untill t-1, that is the middle of a node that have 2t-1 blocks, which is a node that we
+			// are on because we got into splitChild function
+			parentOfNode.addKey(childAti.getBlockAt(j+t),j);
+
+		if(!childAti.isLeaf()){
+			for(int j = 1; j < t; j++){
+				parentOfNode.getChildrenList().add(j, childAti.getChildAt(j+t));
+			}
+		}
+
+		for(int j = node.getNumOfBlocks()+1; j < i + 1; i--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+		node.getChildrenList().add(i, parentOfNode);
+
+		for(int j = node.getNumOfBlocks(); j < i; j--)
+			switchPlaces(node, node.getBlockAt(i+1), node.getBlockAt(i));
+
+		// Probably not workin but as a slekelton for fixing it later
+		node.addKey(childAti.getBlockAt(t), i);
+
+
+	}
+
+	private void switchPlaces(BNode node, Block block1, Block block2){
+		if(node.getBlocksList().contains(block2)){
+			int indexOf2 = node.getBlocksList().indexOf(block2);
+			node.addKey(block2, node.getBlocksList().indexOf(block1));
+			node.addKey(block1, indexOf2);
+		}
+		else {
+			int lastIndex = node.getNumOfBlocks();
+			node.addKey(block1, lastIndex);
+		}
+
+	}
+
+	private void insertNonFull(BNode node, Block k){
+		int i = node.getNumOfBlocks();
+		Block myBlock = new Block(k.getKey(),new byte[10]); // the 10 is probably not true
+		if(node.isLeaf()){
+			while (i >= 1 && k.getKey() < node.getBlockKeyAt(i-1)){
+				switchPlaces(node, node.getBlockAt(i), node.getBlockAt(i));
+				i = i - 1;
+			}
+			node.getBlocksList().add(i, myBlock);
+//			switchPlaces(node, node.getBlockAt(i+1), k);
+		}
+		else {
+			while(i >= 1 && k.getKey() < node.getBlockKeyAt(i))
+				i = i - 1;
+
+			i = i + 1;
+
+			if (node.getNumOfBlocks() == 2*t - 1){
+				splitChild(node, i);
+				if(k.getKey() > node.getBlockKeyAt(i))
+					i = i + 1;
+			}
+
+			insertNonFull(node.getChildAt(i), k);
+		}
+		return;
 	}
 
 	@Override
 	public void delete(int key) {
-		// TODO Auto-generated method stub
+		// first case - delete from current node - a leaf
+		Block blockToDelete = search(key);
+		BNode fromNodeToDelete = this.root;
+
 		
 	}
+
+//	public boolean remove(Block blockToRemove){
+//		if(blockToRemove == null)
+//			return false;
+//
+//		int indexOf = this.
+//	}
 
 	@Override
 	public MerkleBNode createMBT() {
