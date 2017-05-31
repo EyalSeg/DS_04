@@ -66,13 +66,28 @@ public class BTree implements BTreeInterface {
 
 	@Override
 	public Block search(int key) {
+
+		if (root == null)
+			return null;
+
 		return root.search(key);
 	}
 
 	@Override
 	public void insert(Block b) {
-		// TODO Auto-generated method stub
-		
+		if (root == null)
+			root = new BNode(t, true, 0);
+
+		root.insertNonFull(b);
+
+
+		if (root.getNumOfBlocks() > t * 2 - 1)
+		{
+			BNode newRoot = new BNode(t, root);
+			root = newRoot;
+
+			root.splitChild(0);
+		}
 	}
 
 	@Override
