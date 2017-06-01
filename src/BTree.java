@@ -98,8 +98,7 @@ public class BTree implements BTreeInterface {
 
 	@Override
 	public MerkleBNode createMBT() {
-		// TODO Auto-generated method stub
-		return null;
+		return root.createHashNode();
 	}
 
 

@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.ListIterator;
 
 //SUBMIT
 public class BNode implements BNodeInterface {
@@ -202,8 +203,27 @@ public class BNode implements BNodeInterface {
 
     @Override
     public MerkleBNode createHashNode() {
-        // TODO Auto-generated method stub
-        return null;
+
+        ArrayList<MerkleBNode> childNodes = new ArrayList<>();
+        for (BNode child : childrenList) {
+            if (child == null)
+                continue;
+
+            childNodes.add(child.createHashNode());
+        }
+
+        ArrayList<byte[]> itemsToHash = new ArrayList<>();
+        for (Block item : blocksList)
+            itemsToHash.add(item.getData());
+
+        // insert the children between the blocks
+        for (int i = 0 ; i < childNodes.size(); i++)
+            itemsToHash.add(i * 2, childNodes.get(i).getHashValue());
+
+        byte[] hashCode = HashUtils.sha1Hash(itemsToHash);
+        MerkleBNode currentNode = new MerkleBNode(hashCode, childNodes.isEmpty(), childNodes);
+
+        return currentNode;
     }
 
 

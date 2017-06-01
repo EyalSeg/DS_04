@@ -42,6 +42,8 @@ public class MoreTests {
         System.out.println("Testing node values: " + testNodeValues(tree.getRoot(), Integer.MIN_VALUE, Integer.MAX_VALUE));
         System.out.println("Testing search: " + testSearch(tree, map));
 
+        tree.createMBT();
+
     }
 
     public static boolean testNodeSizes(BNode node, int maxSize)
