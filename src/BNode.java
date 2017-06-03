@@ -180,6 +180,27 @@ public class BNode implements BNodeInterface {
         return child != null? child.search(key) : null;
     }
 
+
+    // Duplicate code, I am not sure that I need to use that
+    public int searchBlockIndex(int key){
+        for (int i = 0 ; i < blocksList.size(); i++)
+        {
+            Block currentBlock = getBlockAt(i);
+
+            if (currentBlock.getKey() == key)
+                return i;
+
+            if (getBlockAt(i).getKey() < key)
+                continue;
+
+            BNode child = getChildAt(i);
+            return child != null? child.searchBlockIndex(key) : -1;
+        }
+
+        BNode child = getChildAt(blocksList.size());
+        return child != null? child.searchBlockIndex(key) : -1;
+    }
+
     @Override
     public void insertNonFull(Block itemToAdd) {
         int indexToInsert = findBlockPosition(itemToAdd.getKey());
@@ -199,7 +220,7 @@ public class BNode implements BNodeInterface {
     @Override
     public void delete(int key) {
         Block toRemoveBlock = this.search(key);
-        int toRemoveIndex = this.findBlockPosition(key);
+        int toRemoveIndex = this.searchBlockIndex(key);
 
         // Case 1
         if(this.isLeaf() && this.blocksList.contains(toRemoveBlock)) // not sure that the second part is necessary or right
@@ -207,8 +228,11 @@ public class BNode implements BNodeInterface {
 
         // Case 2,3,4
         else if(!this.isLeaf()){
-            BNode iChild = this.getChildAt(toRemoveIndex);
-            BNode iPlusChild = this.getChildAt(toRemoveIndex+1);
+            BNode iChild = this.getChildAt(toRemoveIndex-1);
+            // I think that this is wrong
+            // The problem is with the situation where there is no right child so
+            // child in index toRemove+1 doesn't exist
+            BNode iPlusChild = this.getChildAt(toRemoveIndex);
 
 
             // Case 2
@@ -274,7 +298,7 @@ public class BNode implements BNodeInterface {
 
     private Block getSuccessor(int key, int version){
         Block blockToReturn = new Block(0, null);
-        int indexOfCurrentBlock = this.findBlockPosition(key);
+        int indexOfCurrentBlock = this.searchBlockIndex(key);
 
         if(this.getChildrenList().size() < indexOfCurrentBlock){
             boolean foundSuccessor = false;
@@ -288,7 +312,7 @@ public class BNode implements BNodeInterface {
                     i++;
             }
         }
-        if(version == 1)
+        if(version == 1 && indexOfCurrentBlock != -1)
             this.delete(key);
 
         return blockToReturn;

@@ -94,8 +94,9 @@ public class BTree implements BTreeInterface {
 	public void delete(int key) {
 		if (root == null)
 			return;
-
-		root.delete(key);
+		for(int i = 0; i < this.root.getChildrenList().size(); i++){
+			this.root.getChildAt(i).delete(key);
+		}
 	}
 
 	@Override

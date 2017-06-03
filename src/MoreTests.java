@@ -9,7 +9,7 @@ public class MoreTests {
 
     public static void main(String[] args)
     {
-        BTree tree = new BTree(2);
+        BTree tree = new BTree(3);
         ArrayList<Block> blocks = Block.blockFactory(0, 100);
         HashMap<Integer, Block> map = new HashMap<Integer, Block>();
 
@@ -32,6 +32,17 @@ public class MoreTests {
         map.put(1, blocks.get(1));
         map.put(6, blocks.get(6));
 
+        // Addition of mine
+        map.put(12, blocks.get(12));
+        map.put(15, blocks.get(15));
+        map.put(17, blocks.get(17));
+        map.put(28, blocks.get(28));
+        map.put(25, blocks.get(25));
+        map.put(54, blocks.get(54));
+        map.put(87, blocks.get(87));
+        map.put(39, blocks.get(39));
+
+
         for (Map.Entry<Integer, Block> item : map.entrySet())
         {
             tree.insert(item.getValue());
@@ -42,8 +53,36 @@ public class MoreTests {
         System.out.println("Testing node values: " + testNodeValues(tree.getRoot(), Integer.MIN_VALUE, Integer.MAX_VALUE));
         System.out.println("Testing search: " + testSearch(tree, map));
 
+        System.out.println("Test block number: " + testBlockNumber(tree.getRoot(), tree.getRoot()));
+        tree.delete(6);
+        System.out.println("\n\n\n");
+        System.out.println(tree);
         tree.createMBT();
 
+    }
+
+    public static boolean testBlockNumber(BNode nody, BNode rootNode){
+        if(nody == null){
+            return true;
+        }
+        int Tnumber = nody.getT();
+        int sizeOfCurrentBlockList = nody.getBlocksList().size();
+        boolean tester = true;
+        if(nody != rootNode && nody.getBlocksList().size() < Tnumber - 1){
+            tester= false;
+        }
+
+        if(tester == false){
+            System.out.println("there are not enough blocks in this node");
+            System.out.println("\n"+nody);
+        }
+        if(tester == true){
+            for(int i = 0; i < nody.getChildrenList().size(); i++){
+                testBlockNumber(nody.getChildAt(i), rootNode);
+            }
+        }
+
+        return tester;
     }
 
     public static boolean testNodeSizes(BNode node, int maxSize)
