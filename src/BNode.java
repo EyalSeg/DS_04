@@ -195,11 +195,113 @@ public class BNode implements BNodeInterface {
         }
     }
 
+
     @Override
     public void delete(int key) {
-        // TODO Auto-generated method stub
+        Block toRemoveBlock = this.search(key);
+        int toRemoveIndex = this.findBlockPosition(key);
+
+        // Case 1
+        if(this.isLeaf() && this.blocksList.contains(toRemoveBlock)) // not sure that the second part is necessary or right
+            this.getBlocksList().remove(toRemoveBlock);
+
+        // Case 2,3,4
+        else if(!this.isLeaf()){
+            BNode iChild = this.getChildAt(toRemoveIndex);
+            BNode iPlusChild = this.getChildAt(toRemoveIndex+1);
+
+
+            // Case 2
+            if(iChild.getNumOfBlocks() >= t){
+                Block predecessor = iChild.getPredecessor(key, 1); // version 1 - is with delete
+                this.getBlocksList().add(predecessor);
+                this.getBlocksList().remove(toRemoveBlock);
+            }
+
+            // Case 3, 4
+            else if(iChild.getNumOfBlocks() == t - 1) {
+
+                // Case 3
+                if (iPlusChild.getNumOfBlocks() >= t) {
+                    Block successor = iPlusChild.getSuccessor(key, 1);
+                    this.getBlocksList().add(successor);
+                    this.getBlocksList().remove(toRemoveBlock);
+                }
+
+                // Case 4 // what about the option that there is no more childs to merge?
+                // maybe there is a mistake here for the option that there is no toRemove + 1 in indexes of children
+                else if(iPlusChild.getNumOfBlocks() == t - 1){
+                    this.getBlocksList().add(toRemoveBlock);
+                    iChild.getBlocksList().addAll(iPlusChild.getBlocksList());
+                    this.getChildrenList().remove(iPlusChild);
+                }
+            }
+        }
+    }
+
+    // version  - more thing that needs to be done in the functin
+    // 1 - the predessecor will need to be deleted
+    private Block getPredecessor(int key, int version){
+        // Not sure that this is good, neeed to initalize it with some value
+        Block blockToReturn = new Block(0, null); // not sure that this is good, the 0 part
+        int indexOfCurrentBlock = this.findBlockPosition(key);
+
+        // there is no right child -
+        if(this.getChildrenList().size() < indexOfCurrentBlock){
+            boolean foundPredecessor = false;
+            int i = 0;
+            while(!foundPredecessor && i < this.getNumOfBlocks()){
+                if(this.getBlockAt(i).getKey() > key){
+                    blockToReturn = this.getBlockAt(i);
+                    foundPredecessor = true;
+                }
+                else
+                    i++;
+
+            }
+            if(version == 1)
+                this.delete(key);
+        }
+        // I send the first block with the left child and then only right
+        // so if there are children, i need to go right
+        if(this.getChildrenList().size() >= indexOfCurrentBlock){
+            blockToReturn = this.getChildAt(indexOfCurrentBlock+1).getPredecessor(key, version);
+        }
+
+        return blockToReturn;
 
     }
+
+    private Block getSuccessor(int key, int version){
+        Block blockToReturn = new Block(0, null);
+        int indexOfCurrentBlock = this.findBlockPosition(key);
+
+        if(this.getChildrenList().size() < indexOfCurrentBlock){
+            boolean foundSuccessor = false;
+            int i = 0;
+            while(!foundSuccessor && i < this.getNumOfBlocks()){
+                if(this.getBlockAt(i).getKey() > key){
+                    blockToReturn = this.getBlockAt(i-1);
+                    foundSuccessor = true;
+                }
+                else
+                    i++;
+            }
+        }
+        if(version == 1)
+            this.delete(key);
+
+        return blockToReturn;
+    }
+
+    private void replaceAndRemove(Block replaceAndRemove, Block toReplace){
+        // this function is applied only on leafs, so only the part of the leaf in the delete sould be applied
+        this.delete(replaceAndRemove.getKey());
+
+    }
+
+
+
 
     @Override
     public MerkleBNode createHashNode() {
