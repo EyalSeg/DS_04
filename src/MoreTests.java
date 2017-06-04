@@ -43,22 +43,44 @@ public class MoreTests {
         map.put(87, blocks.get(87));
         map.put(39, blocks.get(39));
 
-
         for (Map.Entry<Integer, Block> item : map.entrySet())
         {
             tree.insert(item.getValue());
         }
 
+        tree.createMBT();
+
         System.out.println("Testing node sizes: " + testNodeSizes(tree.getRoot(), t * 2 - 1));
         System.out.println("Testing node orders: " + testNodesOrdered(tree.getRoot()));
         System.out.println("Testing node values: " + testNodeValues(tree.getRoot(), Integer.MIN_VALUE, Integer.MAX_VALUE));
         System.out.println("Testing search: " + testSearch(tree, map));
+        System.out.println("Testing numOfBlocks: " + testNumOfBlocks(tree.getRoot()));
+
+        for (Map.Entry<Integer, Block> item : map.entrySet())
+        {
+            int keyToRemove = item.getKey();
+            tree.delete(keyToRemove);
+
+            if (tree.search(keyToRemove) != null)
+                System.out.println("failed to remove " + keyToRemove);
+
+            if (!testNodeSizes(tree.getRoot(), t * 2 - 1))
+                System.out.println("Node sizes fucked up, yo");
+
+            if (!testNodesOrdered(tree.getRoot()))
+                System.out.println("Nodes order fucked up, yo");
+
+            if (!testNodeValues(tree.getRoot(), Integer.MIN_VALUE, Integer.MAX_VALUE))
+                System.out.println("node values fucked up, yo");
+
+            if(!testNumOfBlocks(tree.getRoot()))
+                System.out.println("numOfBlocks fucked up, yo");
+
+        }
 
         System.out.println("Test block number: " + testBlockNumber(tree.getRoot(), tree.getRoot()));
-      //  tree.delete(6);
         System.out.println("\n\n\n");
         System.out.println(tree);
-        tree.createMBT();
 
     }
 
@@ -138,7 +160,7 @@ public class MoreTests {
             minValue = node.getBlockAt(i).getKey();
         }
 
-        return testNodeValues(node.getChildAt(node.getNumOfBlocks() - 1),
+        return testNodeValues(node.getChildAt(node.getChildrenList().size() - 1),
                 minValue,
                maxValue);
     }
@@ -159,6 +181,24 @@ public class MoreTests {
 
         return true;
     }
+
+    public static boolean testNumOfBlocks(BNode node)
+    {
+        if (node == null)
+            return true;
+
+        if (node.getNumOfBlocks() != node.getBlocksList().size())
+            return false;
+
+        for (BNode child : node.getChildrenList())
+        {
+            if (!testNumOfBlocks(child))
+                return false;
+        }
+
+        return true;
+    }
+
 
 
 

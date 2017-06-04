@@ -103,7 +103,6 @@ public class BNode implements BNodeInterface {
         return childrenList.get(indx);
     }
 
-
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -158,6 +157,10 @@ public class BNode implements BNodeInterface {
     // ///////////////////DO NOT CHANGE END///////////////////
     // ///////////////////DO NOT CHANGE END///////////////////
 
+    public boolean canRemoveFrom()
+    {
+        return blocksList.size() >= t;
+    }
 
     @Override
     public Block search(int key) {
@@ -216,48 +219,38 @@ public class BNode implements BNodeInterface {
 
     @Override
     public void delete(int key) {
-        Block toRemoveBlock = this.search(key);
-        int toRemoveIndex = this.searchBlockIndex(key);
 
-        // Case 1
-        if(this.isLeaf() && this.blocksList.contains(toRemoveBlock)) // not sure that the second part is necessary or right
-            this.getBlocksList().remove(toRemoveBlock);
+        if (blocksList.size() == 0)
+            return;
 
-        // Case 2,3,4
-        else if(!this.isLeaf()){
-            BNode iChild = this.getChildAt(toRemoveIndex-1);
-            // I think that this is wrong
-            // The problem is with the situation where there is no right child so
-            // child in index toRemove+1 doesn't exist
-            BNode iPlusChild = this.getChildAt(toRemoveIndex);
+        for (int i = 0 ; i < blocksList.size(); i++) {
 
-
-            // Case 2
-            if(iChild.getNumOfBlocks() >= t){
-                Block predecessor = iChild.getPredecessor(key, 1); // version 1 - is with delete
-                this.getBlocksList().add(predecessor);
-                this.getBlocksList().remove(toRemoveBlock);
+            Block currentBlock = getBlockAt(i);
+            if (currentBlock.getKey() == key) {
+                deleteAtIndex(i);
+                return;
             }
-
-            // Case 3, 4
-            else if(iChild.getNumOfBlocks() == t - 1) {
-
-                // Case 3
-                if (iPlusChild.getNumOfBlocks() >= t) {
-                    Block successor = iPlusChild.getSuccessor(key, 1);
-                    this.getBlocksList().add(successor);
-                    this.getBlocksList().remove(toRemoveBlock);
-                }
-
-                // Case 4 // what about the option that there is no more childs to merge?
-                // maybe there is a mistake here for the option that there is no toRemove + 1 in indexes of children
-                else if(iPlusChild.getNumOfBlocks() == t - 1){
-                    this.getBlocksList().add(toRemoveBlock);
-                    iChild.getBlocksList().addAll(iPlusChild.getBlocksList());
-                    this.getChildrenList().remove(iPlusChild);
-                }
+            else if (currentBlock.getKey() > key)
+            {
+                deleteFromChild(i, key);
+                return;
             }
         }
+
+        Block lastBlock = getBlockAt(getBlocksList().size() - 1);
+        if (key > lastBlock.getKey())
+        {
+            BNode lastChild = getChildAt(getChildrenList().size() - 1);
+            if (!lastChild.canRemoveFrom())
+            {
+                increaseChildSize(getChildrenList().size() - 2);
+                lastChild = getChildAt(getChildrenList().size() - 1);
+            }
+
+            lastChild.delete(key);
+        }
+
+
     }
 
     // version  - more thing that needs to be done in the functin
@@ -321,9 +314,31 @@ public class BNode implements BNodeInterface {
 
     }
 
+    private void deleteAtIndex(int index)
+    {
+        int key = getBlockKeyAt(index);
+        if (isLeaf()) {
+            blocksList.remove(index);
+            numOfBlocks--;
+            return;
+        }
+
+        Block childBlock = removeSuccessorOrPreccessor(index);
+        if (childBlock != null) {
+            blocksList.set(index, childBlock);
+            return;
+        }
+
+        // if reached here, it means that no predecessor/successor could have been remove. Therefore, we must merge the children
+
+        mergeChildren(index);
+        getChildAt(index).delete(key); // the merge will insert the current index to the the created child. Therefore we must remove it
+    }
 
     @Override
     public MerkleBNode createHashNode() {
+        if (numOfBlocks == 0)
+            return null;
 
         ArrayList<MerkleBNode> childNodes = new ArrayList<>();
         for (BNode child : childrenList) {
@@ -378,6 +393,7 @@ public class BNode implements BNodeInterface {
     // returns the index of the first block within blocklist who's key value is greater than or equal to the given key.
     // if all blocks are lesser than the given key, the index of the last block + 1 will be returned
     private int findBlockPosition(int key) {
+
         for (int i = 0; i < blocksList.size(); i++) {
             if (key <= blocksList.get(i).getKey())
                 return i;
@@ -417,6 +433,137 @@ public class BNode implements BNodeInterface {
 
 
     }
+
+    private void deleteFromChild(int childIndex, int keyToRemove)
+    {
+        BNode child = getChildAt(childIndex);
+        if (child == null)
+            return;
+
+        if (!child.canRemoveFrom())
+        {
+            increaseChildSize(childIndex);
+            child = getChildAt(childIndex);
+        }
+
+        child.delete(keyToRemove);
+    }
+
+    private Block shiftRight()
+    {
+        numOfBlocks--;
+        return blocksList.remove(blocksList.size() - 1);
+    }
+
+    private Block shiftLeft()
+    {
+        numOfBlocks--;
+        return blocksList.remove(0);
+    }
+
+    private void increaseChildSize(int childIndex)
+    {
+        // try shift from left child
+        if (childIndex > 0 &&
+                tryShiftRightFromChild(childIndex - 1))
+            return;
+
+        // try shift from right child
+        if (childIndex < childrenList.size() - 1 &&
+                tryShiftLeftFromChild(childIndex + 1))
+            return;
+
+        mergeChildren(childIndex);
+    }
+
+    private boolean tryShiftRightFromChild(int childToShiftFrom){
+        BNode child = getChildAt(childToShiftFrom);
+        if (!child.canRemoveFrom())
+            return false;
+
+        Block temp = getBlockAt(childToShiftFrom);
+        blocksList.set(childToShiftFrom, child.shiftRight());
+
+        getChildAt(childToShiftFrom + 1).blocksList.add(0, temp);
+        getChildAt(childToShiftFrom + 1).numOfBlocks++;
+
+        return true;
+    }
+
+    private boolean tryShiftLeftFromChild(int childToShiftFrom)
+    {
+        BNode child = getChildAt(childToShiftFrom);
+        if (!child.canRemoveFrom())
+            return false;
+
+        Block temp = getBlockAt(childToShiftFrom - 1);
+        blocksList.set(childToShiftFrom - 1, child.shiftLeft());
+
+        getChildAt(childToShiftFrom  - 1).blocksList.add(temp);
+        getChildAt(childToShiftFrom - 1).numOfBlocks++;
+        return true;
+    }
+
+    private Block removeSuccessorOrPreccessor(int blockIndex)
+    {
+        BNode leftChild = getChildAt(blockIndex);
+        if (leftChild.canRemoveFrom())
+        {
+            Block predecessor = leftChild.findGreatest();
+            leftChild.delete(predecessor.getKey());
+
+            return predecessor;
+        }
+
+        BNode rightChild = getChildAt(blockIndex + 1);
+        if (rightChild.canRemoveFrom())
+        {
+            Block successor = rightChild.findSmallest();
+            rightChild.delete(successor.getKey());
+
+            return successor;
+        }
+
+        return null;
+    }
+
+    public void mergeChildren(int leftChildIndex)
+    {
+        int rightChildIndex = leftChildIndex + 1;
+        BNode leftChild = getChildAt(leftChildIndex);
+        BNode rightChild = getChildAt(rightChildIndex);
+
+        if (getNumOfBlocks() > 0)
+        {
+            leftChild.blocksList.add(getBlockAt(leftChildIndex));
+            this.getBlocksList().remove(leftChildIndex);
+            this.getChildrenList().remove(rightChildIndex);
+
+            numOfBlocks--;
+        }
+
+        leftChild.blocksList.addAll(rightChild.blocksList);
+        leftChild.childrenList.addAll(rightChild.childrenList);
+
+        leftChild.numOfBlocks = leftChild.getBlocksList().size();
+    }
+
+    public Block findSmallest()
+    {
+        if (this.isLeaf() || getChildAt(0) == null)
+            return blocksList.get(0);
+
+        return getChildAt(0).findSmallest();
+    }
+
+    public Block findGreatest()
+    {
+        if (this.isLeaf() || getChildAt(childrenList.size() - 1) == null)
+            return getBlockAt(getBlocksList().size() - 1);
+
+        return getChildAt(getChildrenList().size() - 1).findGreatest();
+    }
+
 }
 
 

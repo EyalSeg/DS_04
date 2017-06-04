@@ -88,8 +88,15 @@ public class BTree implements BTreeInterface {
 	public void delete(int key) {
 		if (root == null)
 			return;
-		for(int i = 0; i < this.root.getChildrenList().size(); i++){
-			this.root.getChildAt(i).delete(key);
+
+		root.delete(key);
+		if (root.getNumOfBlocks() == 0)
+		{
+			//root.mergeChildren(0);
+			//root = root.getChildAt(0);
+
+			// can only happen after a merge occured, so we take the merged child as the new root
+			root = root.getChildAt(0);
 		}
 	}
 
