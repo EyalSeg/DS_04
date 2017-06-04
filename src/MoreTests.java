@@ -9,7 +9,8 @@ public class MoreTests {
 
     public static void main(String[] args)
     {
-        BTree tree = new BTree(3);
+        int t = 3;
+        BTree tree = new BTree(t);
         ArrayList<Block> blocks = Block.blockFactory(0, 100);
         HashMap<Integer, Block> map = new HashMap<Integer, Block>();
 
@@ -48,13 +49,13 @@ public class MoreTests {
             tree.insert(item.getValue());
         }
 
-        System.out.println("Testing node sizes: " + testNodeSizes(tree.getRoot(), 3));
+        System.out.println("Testing node sizes: " + testNodeSizes(tree.getRoot(), t * 2 - 1));
         System.out.println("Testing node orders: " + testNodesOrdered(tree.getRoot()));
         System.out.println("Testing node values: " + testNodeValues(tree.getRoot(), Integer.MIN_VALUE, Integer.MAX_VALUE));
         System.out.println("Testing search: " + testSearch(tree, map));
 
         System.out.println("Test block number: " + testBlockNumber(tree.getRoot(), tree.getRoot()));
-        tree.delete(6);
+      //  tree.delete(6);
         System.out.println("\n\n\n");
         System.out.println(tree);
         tree.createMBT();

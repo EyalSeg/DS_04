@@ -78,16 +78,10 @@ public class BTree implements BTreeInterface {
 		if (root == null)
 			root = new BNode(t, true, 0);
 
+		if (root.isFull())
+			splitRoot();
+
 		root.insertNonFull(b);
-
-
-		if (root.getNumOfBlocks() > t * 2 - 1)
-		{
-			BNode newRoot = new BNode(t, root);
-			root = newRoot;
-
-			root.splitChild(0);
-		}
 	}
 
 	@Override
@@ -102,6 +96,14 @@ public class BTree implements BTreeInterface {
 	@Override
 	public MerkleBNode createMBT() {
 		return root.createHashNode();
+	}
+
+	private void splitRoot()
+	{
+		BNode newRoot = new BNode(t, root);
+		root = newRoot;
+
+		root.splitChild(0);
 	}
 
 

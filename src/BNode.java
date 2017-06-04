@@ -209,9 +209,6 @@ public class BNode implements BNodeInterface {
             insertBlockAt(itemToAdd, indexToInsert);
         else
         {
-          //  int childIndex = indexToInsert == blocksList.size() ?
-          //          indexToInsert + 1 : indexToInsert;
-
             insertToChild(itemToAdd, indexToInsert);
         }
     }
@@ -325,8 +322,6 @@ public class BNode implements BNodeInterface {
     }
 
 
-
-
     @Override
     public MerkleBNode createHashNode() {
 
@@ -407,11 +402,20 @@ public class BNode implements BNodeInterface {
         if (childrenList.get(childIndex) == null)
             childrenList.set(childIndex, new BNode(t, false, 0));
 
-        BNode child = childrenList.get(childIndex);
+        BNode child = getChildAt(childIndex);
+
+        if (child.isFull())
+        {
+            splitChild(childIndex);
+            if (getBlockAt(childIndex).getKey() < blockToInsert.getKey())
+                childIndex++;
+
+            child = getChildAt(childIndex);
+        }
+
         child.insertNonFull(blockToInsert);
 
-        if (child.getNumOfBlocks() > t * 2 - 1)
-            splitChild(childIndex);
+
     }
 }
 
