@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.ListIterator;
 
 //SUBMIT
 public class BNode implements BNodeInterface {
@@ -175,12 +174,16 @@ public class BNode implements BNodeInterface {
             if (getBlockAt(i).getKey() < key)
                 continue;
 
-            BNode child = getChildAt(i);
-            return child != null? child.search(key) : null;
+            if (isLeaf())
+                return null;
+
+            return getChildAt(i).search(key);
         }
 
-        BNode child = getChildAt(blocksList.size());
-        return child != null? child.search(key) : null;
+        if (isLeaf())
+            return null;
+
+       return getChildAt(blocksList.size()).search(key);
     }
 
 
@@ -237,18 +240,19 @@ public class BNode implements BNodeInterface {
             }
         }
 
-        Block lastBlock = getBlockAt(getBlocksList().size() - 1);
-        if (key > lastBlock.getKey())
-        {
-            BNode lastChild = getChildAt(getChildrenList().size() - 1);
-            if (!lastChild.canRemoveFrom())
-            {
-                increaseChildSize(getChildrenList().size() - 2);
-                lastChild = getChildAt(getChildrenList().size() - 1);
-            }
-
-            lastChild.delete(key);
-        }
+        deleteFromChild(blocksList.size(), key);
+//        Block lastBlock = getBlockAt(getBlocksList().size() - 1);
+//        if (key > lastBlock.getKey())
+//        {
+//            BNode lastChild = getChildAt(getChildrenList().size() - 1);
+//            if (!lastChild.canRemoveFrom())
+//            {
+//                increaseChildSize(getChildrenList().size() - 1);
+//                lastChild = getChildAt(getChildrenList().size() - 1);
+//            }
+//
+//            lastChild.delete(key);
+//        }
 
 
     }
@@ -443,22 +447,48 @@ public class BNode implements BNodeInterface {
         if (!child.canRemoveFrom())
         {
             increaseChildSize(childIndex);
+
+            // if the child we are trying to delete from was the last child, and he was removed to to merge
+            if (childIndex == getChildrenList().size())
+                childIndex--;
+
             child = getChildAt(childIndex);
         }
 
         child.delete(keyToRemove);
     }
 
-    private Block shiftRight()
+    public class ShiftResult
     {
-        numOfBlocks--;
-        return blocksList.remove(blocksList.size() - 1);
+            public final Block shiftedBlock;
+            public final BNode shiftedChild;
+
+        private ShiftResult(Block shiftedBlock, BNode shiftedChild) {
+            this.shiftedBlock = shiftedBlock;
+            this.shiftedChild = shiftedChild;
+        }
     }
 
-    private Block shiftLeft()
+    private ShiftResult shiftRight()
     {
         numOfBlocks--;
-        return blocksList.remove(0);
+
+        if (isLeaf())
+                return new ShiftResult(blocksList.remove(blocksList.size() - 1), null);
+
+        return new ShiftResult(blocksList.remove(blocksList.size() - 1),
+                childrenList.remove(childrenList.size() - 1));
+    }
+
+    private ShiftResult shiftLeft()
+    {
+        numOfBlocks--;
+
+        if (isLeaf())
+            return new ShiftResult(blocksList.remove(0), null);
+
+        return new ShiftResult(blocksList.remove(0),
+                childrenList.remove(0));
     }
 
     private void increaseChildSize(int childIndex)
@@ -473,6 +503,9 @@ public class BNode implements BNodeInterface {
                 tryShiftLeftFromChild(childIndex + 1))
             return;
 
+        if (childIndex == getChildrenList().size() - 1)
+            childIndex--;
+
         mergeChildren(childIndex);
     }
 
@@ -481,11 +514,16 @@ public class BNode implements BNodeInterface {
         if (!child.canRemoveFrom())
             return false;
 
+        ShiftResult shift =  child.shiftRight();
         Block temp = getBlockAt(childToShiftFrom);
-        blocksList.set(childToShiftFrom, child.shiftRight());
+
+        blocksList.set(childToShiftFrom, shift.shiftedBlock);
 
         getChildAt(childToShiftFrom + 1).blocksList.add(0, temp);
         getChildAt(childToShiftFrom + 1).numOfBlocks++;
+
+        if (shift.shiftedChild != null)
+            getChildAt(childToShiftFrom + 1).childrenList.add(0, shift.shiftedChild);
 
         return true;
     }
@@ -496,11 +534,16 @@ public class BNode implements BNodeInterface {
         if (!child.canRemoveFrom())
             return false;
 
+        ShiftResult shift = child.shiftLeft();
         Block temp = getBlockAt(childToShiftFrom - 1);
-        blocksList.set(childToShiftFrom - 1, child.shiftLeft());
+        blocksList.set(childToShiftFrom - 1, shift.shiftedBlock);
 
         getChildAt(childToShiftFrom  - 1).blocksList.add(temp);
         getChildAt(childToShiftFrom - 1).numOfBlocks++;
+
+        if (shift.shiftedChild != null)
+            getChildAt(childToShiftFrom - 1).childrenList.add(shift.shiftedChild);
+
         return true;
     }
 
