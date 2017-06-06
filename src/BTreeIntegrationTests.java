@@ -5,6 +5,7 @@ import org.junit.experimental.theories.Theory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,8 +21,13 @@ public class BTreeIntegrationTests {
     public static @DataPoints
     int[] tValues = new int[]{2,3,4, 5, 6, 7, 8, 9, 10};
 
-    public static @DataPoint
-    HashMap<Integer, Block> blocks = getBlocks();
+    public static @DataPoints
+    HashMap<Integer, Block>[] blocks = new HashMap[] {
+            getBlocksByRange(10, 20),
+            getBlocksByRange(10, 50),
+            getBlocksByRange(0, 230),
+       //     getBlocksByRange(1, 1000),
+    };
 
 
     @Theory
@@ -35,10 +41,10 @@ public class BTreeIntegrationTests {
             itemsCount++;
 
             Assertions.assertEquals(itemsCount, TestHelper.countTreeItems(testTree.getRoot()), "Unexpected number of blocks");
-
-                TestHelper.AssertTree(testTree);
-
         }
+
+        TestHelper.AssertTree(testTree);
+
     }
 
     @Theory
@@ -64,6 +70,17 @@ public class BTreeIntegrationTests {
                 TestHelper.deleteAndTest(testTree, pair.getKey());
         }
 
+    }
+
+    private static HashMap<Integer, Block> getBlocksByRange(int minValue, int maxValue)
+    {
+        HashMap map = new HashMap<>();
+        ArrayList<Block> blocks = Block.blockFactory(minValue, maxValue);
+
+        for (Block block : blocks)
+            map.put(block.getKey(), block);
+
+        return map;
     }
 
 

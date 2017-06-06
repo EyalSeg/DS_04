@@ -1,6 +1,7 @@
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +13,83 @@ import static org.junit.jupiter.api.Assertions.*;
  * Created by Eyal on 6/5/2017.
  */
 public class BTreeUT {
+
+    @Test
+    public void testInsert_leafNotFull()
+    {
+        throw new NotImplementedException();
+    }
+
+    @Test
+    public void testInsert_leafIsFull_ShouldSplit()
+    {
+        throw new NotImplementedException();
+    }
+
+    @Test
+    public void testInsert_internalNodeFull_ShouldSplit()
+    {
+        throw new NotImplementedException();
+    }
+
+    @Test
+    public void testInsert_rootIsFull_ShouldSplit()
+    {
+        throw new NotImplementedException();
+    }
+
+    @Test
+    public void testSearch_nonExistingItem()
+    {
+        int t = 3;
+        BNode child1 =  createNode(t, new int[]{1, 2, 3, 4}, true, null);
+        BNode child2 = createNode(t, new int[]{12, 13, 14, 15}, true, null);
+
+        BTree testTree = new BTree(t, createNode(t, new int[]{10}, false, new BNode[]{
+                child1, child2
+        } ));
+
+        assertEquals(null, testTree.search(8));
+    }
+
+    @Test
+    public void testSearch_emptyTree()
+    {
+        BTree testTree = new BTree(2);
+
+        assertEquals(null, testTree.search(10), "Search yielded a result!");
+    }
+
+    @Test
+    public void testDelete_emptyTree()
+    {
+        BTree testTree = new BTree(2);
+
+        testTree.delete(10);
+
+        if (testTree.getRoot() == null)
+            return;
+
+        assertEquals(TestHelper.countTreeItems(testTree.getRoot()), 0, "Tree size is not 0");
+    }
+
+    @Test
+    public void testDelete_nonExistingItem()
+    {
+        int t = 3;
+        BNode child1 =  createNode(t, new int[]{1, 2, 3, 4}, true, null);
+        BNode child2 = createNode(t, new int[]{12, 13, 14, 15}, true, null);
+
+        BTree testTree = new BTree(t, createNode(t, new int[]{10}, false, new BNode[]{
+                child1, child2
+        } ));
+
+        testTree.delete(9);
+        assertEquals(9, TestHelper.countTreeItems(testTree.getRoot()), "An item was removed");
+        TestHelper.AssertTree(testTree);
+    }
+
+
     @Test
     public void testDelete_nonEmptyLeaf()
     {

@@ -440,6 +440,9 @@ public class BNode implements BNodeInterface {
 
     private void deleteFromChild(int childIndex, int keyToRemove)
     {
+        if (isLeaf())
+            return;
+
         BNode child = getChildAt(childIndex);
         if (child == null)
             return;
