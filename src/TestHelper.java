@@ -86,4 +86,28 @@ public class TestHelper {
 
         AssertNodeValues(node.getChildAt(node.getNumOfBlocks()), newMinValue, maxValue);
     }
+
+    public static void assertMerkleOrder(BNode node, MerkleBNode merkle)
+    {
+        if (node == null)
+            assertEquals(null, merkle, "The is a merkle node for a non-existing node within the tree");
+
+        assertTrue(node.isLeaf() == merkle.isLeaf());
+
+        if (node.isLeaf())
+        {
+            assertTrue(merkle.getChildrenList() == null || merkle.getChildrenList().size() == 0,
+                    "merkle is marked as a leaf but has children!");
+
+            return;
+        }
+        if(!node.isLeaf())
+        {
+            assertTrue(node.getChildrenList().size() == merkle.getChildrenList().size());
+
+            for (int i = 0 ; i < node.getChildrenList().size(); i++)
+                assertMerkleOrder(node.getChildAt(i), merkle.getChildrenList().get(i));
+        }
+    }
+
 }

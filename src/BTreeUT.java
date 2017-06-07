@@ -17,25 +17,66 @@ public class BTreeUT {
     @Test
     public void testInsert_leafNotFull()
     {
-        throw new NotImplementedException();
+        int t = 3;
+        BNode child1 =  createNode(t, new int[]{1, 2, 3, 4}, true, null);
+        BNode child2 = createNode(t, new int[]{12, 13, 14, 15}, true, null);
+
+        BTree testTree = new BTree(t, createNode(t, new int[]{10}, false, new BNode[]{
+                child1, child2
+        } ));
+
+        Block blockToAdd = Block.blockFactory(16, 16).get(0);
+        testTree.insert(blockToAdd);
+        TestHelper.AssertTree(testTree);
+        assertEquals(10, TestHelper.countTreeItems(testTree.getRoot()), "Unexpected number of items within the tree");
+
+        assertArrayEquals(new int[]{12, 13, 14, 15, 16},
+                child2.getBlocksList().stream().mapToInt(block -> block.getKey()).toArray(),
+                "The items at the leaf are wrong");
     }
 
     @Test
     public void testInsert_leafIsFull_ShouldSplit()
-    {
-        throw new NotImplementedException();
-    }
+        {
+        int t = 2;
+        BNode child1 =  createNode(t, new int[]{1, 2, 3}, true, null);
+        BNode child2 = createNode(t, new int[]{12, 13, 14}, true, null);
 
-    @Test
-    public void testInsert_internalNodeFull_ShouldSplit()
-    {
-        throw new NotImplementedException();
+        BTree testTree = new BTree(t, createNode(t, new int[]{10}, false, new BNode[]{
+                child1, child2
+        } ));
+
+        Block blockToAdd = Block.blockFactory(16, 16).get(0);
+        testTree.insert(blockToAdd);
+
+        TestHelper.AssertTree(testTree);
+        assertEquals(8, TestHelper.countTreeItems(testTree.getRoot()), "Unexpected number of items within the tree");
+        assertArrayEquals(new int[]{10, 13},
+                testTree.getRoot().getBlocksList().stream().mapToInt(block -> block.getKey()).toArray(),
+                "The items at the root are wrong");
     }
 
     @Test
     public void testInsert_rootIsFull_ShouldSplit()
     {
-        throw new NotImplementedException();
+        int t = 2;
+        BNode child1 =  createNode(t, new int[]{1, 2,}, true, null);
+        BNode child2 = createNode(t, new int[]{13, 14}, true, null);
+        BNode child3 = createNode(t, new int[]{23, 24}, true, null);
+        BNode child4 = createNode(t, new int[]{33, 34}, true, null);
+
+        BTree testTree = new BTree(t, createNode(t, new int[]{10, 20, 30}, false, new BNode[]{
+                child1, child2, child3, child4
+        } ));
+
+        Block blockToAdd = Block.blockFactory(16, 16).get(0);
+        testTree.insert(blockToAdd);
+
+        TestHelper.AssertTree(testTree);
+        assertEquals(12, TestHelper.countTreeItems(testTree.getRoot()), "Unexpected number of items within the tree");
+        assertArrayEquals(new int[]{20},
+                testTree.getRoot().getBlocksList().stream().mapToInt(block -> block.getKey()).toArray(),
+                "The items at the root are wrong");
     }
 
     @Test

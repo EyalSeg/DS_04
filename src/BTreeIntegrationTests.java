@@ -72,6 +72,17 @@ public class BTreeIntegrationTests {
 
     }
 
+    @Theory
+    public void createMerkel(int t, HashMap<Integer, Block> blocks)
+    {
+        BTree testTree = new BTree(t);
+        blocks.values().forEach(block -> testTree.insert(block));
+        MerkleBNode merkle = testTree.createMBT();
+
+        TestHelper.assertMerkleOrder(testTree.getRoot(), merkle);
+    }
+
+
     private static HashMap<Integer, Block> getBlocksByRange(int minValue, int maxValue)
     {
         HashMap map = new HashMap<>();

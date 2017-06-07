@@ -374,11 +374,14 @@ public class BNode implements BNodeInterface {
             childMedian--;
 
         ArrayList<Block> belowChild = new ArrayList<>(child.blocksList.subList(0, childMedian));
-        ArrayList<BNode> belowChildChildren = new ArrayList<>(child.childrenList.subList(0, childMedian + 1));
+        ArrayList<BNode> belowChildChildren = child.isLeaf()?
+                new ArrayList<BNode>() :
+                new ArrayList<>(child.childrenList.subList(0, childMedian + 1));
 
         ArrayList<Block> aboveChild = new ArrayList<>(child.blocksList.subList(childMedian + 1, child.getNumOfBlocks()));
-        ArrayList<BNode> aboveChildChildren = new ArrayList<>(child.childrenList.subList
-                (childMedian + 1, child.getChildrenList().size()));
+        ArrayList<BNode> aboveChildChildren = child.isLeaf()?
+                new ArrayList<BNode>() :
+                new ArrayList<>(child.childrenList.subList(childMedian + 1, child.getChildrenList().size()));
 
         BNode leftNode = new BNode(t, child.isLeaf(), belowChild.size());
         leftNode.blocksList = belowChild;
